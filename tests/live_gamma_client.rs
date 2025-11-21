@@ -32,4 +32,5 @@ async fn clob_client_get_markets_live() {
         response.data.iter().any(|m| !m.clob_token_ids.is_empty()),
         "Markets should contain CLOB token ids"
     );
+    println!("markets are: {:?}", response.data[1]);
 }

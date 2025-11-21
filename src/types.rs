@@ -591,6 +591,44 @@ pub struct Market {
     pub seconds_delay: Decimal,
     pub icon: String,
     pub fpmm: String,
+    pub liquidity: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub liquidity_num: Option<Decimal>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub liquidity_amm: Option<Decimal>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub liquidity_clob: Option<Decimal>,
+    pub volume: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub volume_num: Option<Decimal>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub volume_24hr: Option<Decimal>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub volume_1wk: Option<Decimal>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub volume_1mo: Option<Decimal>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub volume_1yr: Option<Decimal>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub volume_24hr_amm: Option<Decimal>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub volume_1wk_amm: Option<Decimal>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub volume_1mo_amm: Option<Decimal>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub volume_1yr_amm: Option<Decimal>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub volume_24hr_clob: Option<Decimal>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub volume_1wk_clob: Option<Decimal>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub volume_1mo_clob: Option<Decimal>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub volume_1yr_clob: Option<Decimal>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub volume_amm: Option<Decimal>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub volume_clob: Option<Decimal>,
 }
 
 /// Token information within a market
@@ -668,6 +706,26 @@ impl From<GammaMarket> for Market {
             seconds_delay: Decimal::ZERO,
             icon: gamma.icon.unwrap_or_default(),
             fpmm: String::new(),
+            liquidity: gamma.liquidity.clone(),
+            liquidity_num: gamma.liquidity_num,
+            liquidity_amm: gamma.liquidity_amm,
+            liquidity_clob: gamma.liquidity_clob,
+            volume: gamma.volume.clone(),
+            volume_num: gamma.volume_num,
+            volume_24hr: gamma.volume_24hr,
+            volume_1wk: gamma.volume_1wk,
+            volume_1mo: gamma.volume_1mo,
+            volume_1yr: gamma.volume_1yr,
+            volume_24hr_amm: gamma.volume_24hr_amm,
+            volume_1wk_amm: gamma.volume_1wk_amm,
+            volume_1mo_amm: gamma.volume_1mo_amm,
+            volume_1yr_amm: gamma.volume_1yr_amm,
+            volume_24hr_clob: gamma.volume_24hr_clob,
+            volume_1wk_clob: gamma.volume_1wk_clob,
+            volume_1mo_clob: gamma.volume_1mo_clob,
+            volume_1yr_clob: gamma.volume_1yr_clob,
+            volume_amm: gamma.volume_amm,
+            volume_clob: gamma.volume_clob,
         }
     }
 }
@@ -1117,6 +1175,8 @@ pub struct GammaListParams {
     pub related_tags: Option<String>,
     pub order: Option<String>,
     pub ascending: Option<bool>,
+    pub liquidity_num_min: Option<Decimal>,
+    pub end_date_max: Option<DateTime<Utc>>,
 }
 
 impl GammaListParams {
@@ -1149,6 +1209,12 @@ impl GammaListParams {
         }
         if let Some(ascending) = self.ascending {
             params.push(("ascending", ascending.to_string()));
+        }
+        if let Some(liquidity_num_min) = &self.liquidity_num_min {
+            params.push(("liquidity_num_min", liquidity_num_min.to_string()));
+        }
+        if let Some(end_date_max) = &self.end_date_max {
+            params.push(("end_date_max", end_date_max.to_rfc3339()));
         }
         params
     }
@@ -1220,6 +1286,44 @@ pub struct GammaMarket {
     pub icon: Option<String>,
     #[serde(rename = "endDate")]
     pub end_date: Option<String>,
+    pub liquidity: Option<String>,
+    #[serde(rename = "liquidityNum")]
+    pub liquidity_num: Option<Decimal>,
+    pub volume: Option<String>,
+    #[serde(rename = "volumeNum")]
+    pub volume_num: Option<Decimal>,
+    #[serde(rename = "volume24hr")]
+    pub volume_24hr: Option<Decimal>,
+    #[serde(rename = "volume1wk")]
+    pub volume_1wk: Option<Decimal>,
+    #[serde(rename = "volume1mo")]
+    pub volume_1mo: Option<Decimal>,
+    #[serde(rename = "volume1yr")]
+    pub volume_1yr: Option<Decimal>,
+    #[serde(rename = "volume24hrAmm")]
+    pub volume_24hr_amm: Option<Decimal>,
+    #[serde(rename = "volume1wkAmm")]
+    pub volume_1wk_amm: Option<Decimal>,
+    #[serde(rename = "volume1moAmm")]
+    pub volume_1mo_amm: Option<Decimal>,
+    #[serde(rename = "volume1yrAmm")]
+    pub volume_1yr_amm: Option<Decimal>,
+    #[serde(rename = "volume24hrClob")]
+    pub volume_24hr_clob: Option<Decimal>,
+    #[serde(rename = "volume1wkClob")]
+    pub volume_1wk_clob: Option<Decimal>,
+    #[serde(rename = "volume1moClob")]
+    pub volume_1mo_clob: Option<Decimal>,
+    #[serde(rename = "volume1yrClob")]
+    pub volume_1yr_clob: Option<Decimal>,
+    #[serde(rename = "volumeAmm")]
+    pub volume_amm: Option<Decimal>,
+    #[serde(rename = "volumeClob")]
+    pub volume_clob: Option<Decimal>,
+    #[serde(rename = "liquidityAmm")]
+    pub liquidity_amm: Option<Decimal>,
+    #[serde(rename = "liquidityClob")]
+    pub liquidity_clob: Option<Decimal>,
 }
 
 /// Rewards structure for markets

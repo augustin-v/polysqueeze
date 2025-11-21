@@ -11,6 +11,7 @@ use alloy_signer_local::PrivateKeySigner;
 use async_trait::async_trait;
 use base64::Engine;
 use base64::engine::general_purpose::STANDARD as BASE64_ENGINE;
+use chrono::{Duration, Utc};
 use reqwest::Client;
 use reqwest::header::HeaderName;
 use reqwest::{Method, RequestBuilder};
@@ -1550,6 +1551,24 @@ impl ClobClient {
             .unwrap_or(GAMMA_MARKETS_LIMIT);
 
         let mut query = vec![("limit", limit.to_string()), ("offset", offset.to_string())];
+
+        // Always enforce a minimum liquidity threshold (default 10,000 when not specified).
+        let liquidity_min = params
+            .and_then(|options| options.liquidity_num_min.clone())
+            .unwrap_or_else(|| Decimal::from(10_000));
+        query.push(("liquidity_num_min", liquidity_min.to_string()));
+
+        // Default end date to at least three weeks from now.
+        let min_end_date = Utc::now() + Duration::weeks(3);
+        let end_date_max = params
+            .and_then(|options| options.end_date_max.clone())
+            .unwrap_or(min_end_date);
+        let end_date_max = if end_date_max < min_end_date {
+            min_end_date
+        } else {
+            end_date_max
+        };
+        query.push(("end_date_max", end_date_max.to_rfc3339()));
 
         if let Some(options) = params {
             if let Some(closed) = options.closed {
