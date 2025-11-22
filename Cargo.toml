@@ -1,6 +1,6 @@
 [package]
 name = "polysqueeze"
-version = "0.1.4"
+version = "0.1.5"
 edition = "2024"
 description = "Rust SDK for authenticated access to Polymarket's CLOB, Gamma, and WebSocket APIs."
 license = "MIT OR Apache-2.0"

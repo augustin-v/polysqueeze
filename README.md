@@ -94,6 +94,21 @@ cargo run --example wss_market
 The example prints `book`, `price_change`, `tick_size_change`, and
 `last_trade_price` events for the subscribed markets.
 
+For authenticated events, `examples/wss_user.rs` shows how to derive an API key,
+construct `WssUserClient`, and stream `WssUserEvent::Order`/`Trade` messages.
+Run it via `cargo run --example wss_user` once `POLY_PRIVATE_KEY` is set. It
+places a tiny limit order on a ≥1M-liquidity market (you can tweak
+`POLY_WSS_MIN_LIQUIDITY`) and prints the resulting order ID, then waits for user
+events so you can observe partial fills/cancellations. While that example
+runs, start `POLY_WSS_ORDER_ID=… cargo run --example wss_cancel` from another
+terminal to cancel the order and trigger a `WssUserEvent::Order` update.
+
+If you already have API credentials, `WssUserClient` exposes the authenticated
+user channel so you can react to your own orders and trades. Construct
+`WssUserClient::new(api_creds.api_key.clone())`, subscribe to the markets you're
+trading, and drive `next_event()` to consume `WssUserEvent::Order` and
+`WssUserEvent::Trade` payloads that mirror the data shown above.
+
 ## Gamma and Data APIs
 
 Use the `client` module to call Gamma endpoints such as `/markets`, `/events`,

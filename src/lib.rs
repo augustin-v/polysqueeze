@@ -19,4 +19,4 @@ pub mod wss;
 pub use crate::client::{ClobClient, CreateOrderOptions, MarketClient, OrderArgs, PolyClient};
 pub use crate::errors::{PolyError, Result};
 pub use crate::types::{ApiCredentials, SignedOrderRequest};
-pub use crate::wss::{WssMarketClient, WssMarketEvent};
+pub use crate::wss::{WssMarketClient, WssMarketEvent, WssUserClient, WssUserEvent};
