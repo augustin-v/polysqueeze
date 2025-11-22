@@ -1,7 +1,7 @@
 # Polysqueeze
 
 Polysqueeze is a Rust SDK for interacting with Polymarket's REST APIs; the markets,
-orders, and authentication helpers are implemented today, wss only implements the public `MARKETS` channel. If you hit a 401 or other auth pain point, raise
+orders, WSS channel, and authentication helpers are implemented today. If you hit a 401 or other auth pain point, raise
 an issue and the implementation is guaranteed to keep evolving.
 
 
