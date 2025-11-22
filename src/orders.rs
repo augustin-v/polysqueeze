@@ -5,13 +5,14 @@
 
 use crate::auth::sign_order_message;
 use crate::client::OrderArgs;
-use crate::errors::{PolyError, Result};
+use crate::errors::{OrderErrorKind, PolyError, Result};
 use crate::types::{ExtraOrderArgs, MarketOrderArgs, OrderOptions, Side, SignedOrderRequest};
 use alloy_primitives::{Address, U256};
 use alloy_signer_local::PrivateKeySigner;
 use rand::Rng;
 use rust_decimal::Decimal;
 use rust_decimal::RoundingStrategy::{AwayFromZero, MidpointTowardZero, ToZero};
+use rust_decimal::prelude::ToPrimitive;
 use std::collections::HashMap;
 use std::str::FromStr;
 use std::sync::LazyLock;
@@ -115,13 +116,28 @@ fn generate_seed() -> u64 {
     (timestamp as f64 * y) as u64
 }
 
-/// Convert decimal to token units (multiply by 1e6)
-fn decimal_to_token_u32(amt: Decimal) -> u32 {
-    let mut amt = Decimal::from_scientific("1e6").expect("1e6 is not scientific") * amt;
-    if amt.scale() > 0 {
-        amt = amt.round_dp_with_strategy(0, MidpointTowardZero);
+const TOKEN_UNIT_SCALE: i64 = 1_000_000;
+
+/// Convert decimal to token units (multiply by 1e6) with validation
+fn decimal_to_token_units(amount: Decimal) -> Result<u64> {
+    if amount < Decimal::ZERO {
+        return Err(PolyError::order(
+            format!("Amount {} must be non-negative", amount),
+            OrderErrorKind::InvalidSize,
+        ));
     }
-    amt.try_into().expect("Couldn't round decimal to integer")
+
+    let mut scaled = Decimal::from(TOKEN_UNIT_SCALE) * amount;
+    if scaled.scale() > 0 {
+        scaled = scaled.round_dp_with_strategy(0, MidpointTowardZero);
+    }
+
+    scaled.to_u64().ok_or_else(|| {
+        PolyError::order(
+            format!("Amount {} exceeds token unit limits", amount),
+            OrderErrorKind::SizeConstraint,
+        )
+    })
 }
 
 impl OrderBuilder {
@@ -170,7 +186,7 @@ impl OrderBuilder {
         size: Decimal,
         price: Decimal,
         round_config: &RoundConfig,
-    ) -> (u32, u32) {
+    ) -> Result<(u64, u64)> {
         let raw_price = price.round_dp_with_strategy(round_config.price, MidpointTowardZero);
 
         match side {
@@ -178,20 +194,20 @@ impl OrderBuilder {
                 let raw_taker_amt = size.round_dp_with_strategy(round_config.size, ToZero);
                 let raw_maker_amt = raw_taker_amt * raw_price;
                 let raw_maker_amt = self.fix_amount_rounding(raw_maker_amt, round_config);
-                (
-                    decimal_to_token_u32(raw_maker_amt),
-                    decimal_to_token_u32(raw_taker_amt),
-                )
+                Ok((
+                    decimal_to_token_units(raw_maker_amt)?,
+                    decimal_to_token_units(raw_taker_amt)?,
+                ))
             }
             Side::SELL => {
                 let raw_maker_amt = size.round_dp_with_strategy(round_config.size, ToZero);
                 let raw_taker_amt = raw_maker_amt * raw_price;
                 let raw_taker_amt = self.fix_amount_rounding(raw_taker_amt, round_config);
 
-                (
-                    decimal_to_token_u32(raw_maker_amt),
-                    decimal_to_token_u32(raw_taker_amt),
-                )
+                Ok((
+                    decimal_to_token_units(raw_maker_amt)?,
+                    decimal_to_token_units(raw_taker_amt)?,
+                ))
             }
         }
     }
@@ -202,17 +218,17 @@ impl OrderBuilder {
         amount: Decimal,
         price: Decimal,
         round_config: &RoundConfig,
-    ) -> (u32, u32) {
+    ) -> Result<(u64, u64)> {
         let raw_maker_amt = amount.round_dp_with_strategy(round_config.size, ToZero);
         let raw_price = price.round_dp_with_strategy(round_config.price, MidpointTowardZero);
 
         let raw_taker_amt = raw_maker_amt / raw_price;
         let raw_taker_amt = self.fix_amount_rounding(raw_taker_amt, round_config);
 
-        (
-            decimal_to_token_u32(raw_maker_amt),
-            decimal_to_token_u32(raw_taker_amt),
-        )
+        Ok((
+            decimal_to_token_units(raw_maker_amt)?,
+            decimal_to_token_units(raw_taker_amt)?,
+        ))
     }
 
     /// Calculate market price from order book levels
@@ -253,7 +269,7 @@ impl OrderBuilder {
             .ok_or_else(|| PolyError::validation("Cannot create order without tick size"))?;
 
         let (maker_amount, taker_amount) =
-            self.get_market_order_amounts(order_args.amount, price, &ROUNDING_CONFIG[&tick_size]);
+            self.get_market_order_amounts(order_args.amount, price, &ROUNDING_CONFIG[&tick_size])?;
 
         let neg_risk = options
             .neg_risk
@@ -296,7 +312,7 @@ impl OrderBuilder {
             order_args.size,
             order_args.price,
             &ROUNDING_CONFIG[&tick_size],
-        );
+        )?;
 
         let neg_risk = options
             .neg_risk
@@ -329,8 +345,8 @@ impl OrderBuilder {
         side: Side,
         chain_id: u64,
         exchange: Address,
-        maker_amount: u32,
-        taker_amount: u32,
+        maker_amount: u64,
+        taker_amount: u64,
         expiration: u64,
         extras: &ExtraOrderArgs,
     ) -> Result<SignedOrderRequest> {
@@ -381,8 +397,8 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_decimal_to_token_u32() {
-        let result = decimal_to_token_u32(Decimal::from_str("1.5").unwrap());
+    fn test_decimal_to_token_units() {
+        let result = decimal_to_token_units(Decimal::from_str("1.5").unwrap()).unwrap();
         assert_eq!(result, 1_500_000);
     }
 
@@ -394,18 +410,44 @@ mod tests {
     }
 
     #[test]
-    fn test_decimal_to_token_u32_edge_cases() {
+    fn test_decimal_to_token_units_edge_cases() {
         // Test zero
-        let result = decimal_to_token_u32(Decimal::ZERO);
+        let result = decimal_to_token_units(Decimal::ZERO).unwrap();
         assert_eq!(result, 0);
 
         // Test small decimal
-        let result = decimal_to_token_u32(Decimal::from_str("0.000001").unwrap());
+        let result = decimal_to_token_units(Decimal::from_str("0.000001").unwrap()).unwrap();
         assert_eq!(result, 1);
 
         // Test large number
-        let result = decimal_to_token_u32(Decimal::from_str("1000.0").unwrap());
+        let result = decimal_to_token_units(Decimal::from_str("1000.0").unwrap()).unwrap();
         assert_eq!(result, 1_000_000_000);
+    }
+
+    #[test]
+    fn test_decimal_to_token_units_overflow() {
+        let amount = Decimal::from(u64::MAX);
+        let err = decimal_to_token_units(amount).unwrap_err();
+        assert!(matches!(
+            err,
+            PolyError::Order {
+                kind: OrderErrorKind::SizeConstraint,
+                ..
+            }
+        ));
+    }
+
+    #[test]
+    fn test_decimal_to_token_units_negative() {
+        let amount = Decimal::from_str("-1").unwrap();
+        let err = decimal_to_token_units(amount).unwrap_err();
+        assert!(matches!(
+            err,
+            PolyError::Order {
+                kind: OrderErrorKind::InvalidSize,
+                ..
+            }
+        ));
     }
 
     #[test]

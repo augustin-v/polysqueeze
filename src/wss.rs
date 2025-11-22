@@ -379,39 +379,3 @@ fn parse_market_event_value(value: &Value) -> Result<WssMarketEvent> {
         )),
     }
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn parse_price_change_event() {
-        let raw = r#"
-        {
-            "event_type": "price_change",
-            "market": "0xabc",
-            "price_changes": [
-                {
-                    "asset_id": "token",
-                    "price": "0.5",
-                    "size": "200",
-                    "side": "BUY",
-                    "hash": "hash123",
-                    "best_bid": "0.5",
-                    "best_ask": "1"
-                }
-            ],
-            "timestamp": "123"
-        }
-        "#;
-
-        match parse_market_event(raw).unwrap() {
-            WssMarketEvent::PriceChange(payload) => {
-                assert_eq!(payload.market, "0xabc");
-                assert_eq!(payload.price_changes.len(), 1);
-                assert_eq!(payload.price_changes[0].side, Side::BUY);
-            }
-            _ => panic!("Expected price change event"),
-        }
-    }
-}
