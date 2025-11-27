@@ -750,6 +750,56 @@ impl ClobClient {
         Ok(response.json::<Value>().await?)
     }
 
+    /// Post multiple orders in a single batch request
+    ///
+    /// # Example
+    /// ```
+    /// let orders = vec![order1, order2, order3];
+    /// let results = client.post_orders(orders, OrderType::GTC).await?;
+    /// ```
+    pub async fn post_orders(
+        &self,
+        orders: Vec<SignedOrderRequest>,
+        order_type: OrderType,
+    ) -> Result<Vec<Value>> {
+        let signer = self
+            .signer
+            .as_ref()
+            .ok_or_else(|| PolyError::auth("Signer not set"))?;
+        let api_creds = self
+            .api_creds
+            .as_ref()
+            .ok_or_else(|| PolyError::auth("API credentials not set"))?;
+
+        let batch: Vec<PostOrder> = orders
+            .into_iter()
+            .map(|order| PostOrder::new(order, api_creds.api_key.clone(), order_type.clone()))
+            .collect();
+
+        let headers = create_l2_headers(signer, api_creds, "POST", "/orders", Some(&batch))?;
+
+        if env::var("POLY_LOG_REQUEST").is_ok() {
+            if let Ok(body_text) = serde_json::to_string(&batch) {
+                println!("rust request url    : {}", self.clob_url("/orders"));
+                println!("rust request method : POST");
+                println!("rust request headers: {:?}", headers);
+                println!("rust request body   : {}", body_text);
+            }
+        }
+
+        let req = self.create_request_with_headers(Method::POST, "/orders", headers.into_iter());
+
+        let response = req.json(&batch).send().await?;
+        if !response.status().is_success() {
+            return Err(PolyError::api(
+                response.status().as_u16(),
+                format!("Failed to post batch orders: {}", response.text().await.unwrap()),
+            ));
+        }
+
+        Ok(response.json::<Vec<Value>>().await?)
+    }
+
     /// Create and post an order in one call
     pub async fn create_and_post_order(&self, order_args: &OrderArgs) -> Result<Value> {
         let order = self.create_order(order_args, None, None, None).await?;
