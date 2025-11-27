@@ -26,10 +26,6 @@ async fn main() -> Result<()> {
     let creds = l1_client.create_or_derive_api_key(None).await?;
     let mut client = ClobClient::with_l2_headers(&base_url, &private_key, chain_id, creds.clone());
 
-    if let Ok(funder) = env::var("POLY_FUNDER") {
-        client.set_funder(&funder)?;
-    }
-
     let gamma_params = GammaListParams {
         limit: Some(5), // how many markets to fetch max
         ..Default::default()
