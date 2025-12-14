@@ -182,15 +182,13 @@ pub struct LastTradeMessage {
 }
 
 /// Simple stats for monitoring connection health.
-#[derive(Debug, Clone)]
-#[derive(Default)]
+#[derive(Debug, Clone, Default)]
 pub struct WssStats {
     pub messages_received: u64,
     pub errors: u64,
     pub reconnect_count: u32,
     pub last_message_time: Option<DateTime<Utc>>,
 }
-
 
 /// Reconnecting client for the market channel.
 pub struct WssMarketClient {
@@ -303,7 +301,7 @@ impl WssMarketClient {
 
     fn reconnect_delay(&self, attempts: u32) -> Duration {
         let millis = BASE_RECONNECT_DELAY.as_millis() * attempts as u128;
-        
+
         Duration::from_millis(millis.min(MAX_RECONNECT_DELAY.as_millis()) as u64)
     }
 
@@ -497,7 +495,7 @@ impl WssUserClient {
 
     fn reconnect_delay(&self, attempts: u32) -> Duration {
         let millis = BASE_RECONNECT_DELAY.as_millis() * attempts as u128;
-        
+
         Duration::from_millis(millis.min(MAX_RECONNECT_DELAY.as_millis()) as u64)
     }
 

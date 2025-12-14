@@ -891,7 +891,10 @@ impl ClobClient {
         if !response.status().is_success() {
             return Err(PolyError::api(
                 response.status().as_u16(),
-                format!("Failed to post batch orders: {}", response.text().await.unwrap()),
+                format!(
+                    "Failed to post batch orders: {}",
+                    response.text().await.unwrap()
+                ),
             ));
         }
 
@@ -1822,8 +1825,8 @@ impl ClobClient {
             .await
             .map_err(|e| PolyError::parse(format!("Failed to read response body: {}", e), None))?;
 
-        let gamma_market = serde_json::from_str::<crate::types::GammaMarket>(&body)
-            .map_err(|err| {
+        let gamma_market =
+            serde_json::from_str::<crate::types::GammaMarket>(&body).map_err(|err| {
                 PolyError::parse(
                     format!("Failed to parse market {}: {}", market_id, err),
                     None,
@@ -1981,18 +1984,17 @@ impl ClobClient {
             value
         };
 
-        serde_json::from_value::<Vec<T>>(payload).map_err(|err| {
-            PolyError::parse(format!("Failed to parse {}: {}", ctx, err), None)
-        })
+        serde_json::from_value::<Vec<T>>(payload)
+            .map_err(|err| PolyError::parse(format!("Failed to parse {}: {}", ctx, err), None))
     }
 }
 
 // Re-export types from the canonical location in types.rs
 pub use crate::types::{
+    DataApiPositionsParams, DataApiSortBy, DataApiSortDirection, DataPosition, DataPositionValue,
     ExtraOrderArgs, GammaEvent, GammaListParams, Market, MarketOrderArgs, MarketsResponse,
     MidpointResponse, NegRiskResponse, OrderBookSummary, OrderSummary, PriceResponse, Rewards,
     Sport, SpreadResponse, Tag, TickSizeResponse, Token,
-    DataApiPositionsParams, DataApiSortBy, DataApiSortDirection, DataPosition, DataPositionValue,
 };
 
 // Compatibility types that need to stay in client.rs

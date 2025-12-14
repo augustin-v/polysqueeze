@@ -30,7 +30,10 @@ async fn data_api_value_endpoint() {
         .expect("data-api /value request failed");
 
     assert!(
-        response.is_empty() || response.iter().all(|entry| entry.user.eq_ignore_ascii_case(&user)),
+        response.is_empty()
+            || response
+                .iter()
+                .all(|entry| entry.user.eq_ignore_ascii_case(&user)),
         "Only the requested user should be in the response"
     );
 }
