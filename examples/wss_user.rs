@@ -28,10 +28,6 @@ async fn main() -> Result<()> {
     let mut l2_client =
         ClobClient::with_l2_headers(&base_url, &private_key, chain_id, creds.clone());
 
-    if let Ok(funder) = env::var("POLY_FUNDER") {
-        l2_client.set_funder(&funder)?;
-    }
-
     let min_liquidity = env::var("POLY_WSS_MIN_LIQUIDITY")
         .ok()
         .and_then(|value| Decimal::from_str(&value).ok())

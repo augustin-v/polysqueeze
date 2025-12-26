@@ -263,6 +263,7 @@ impl ClobClient {
             api_creds: Some(api_creds),
             order_builder: Some(order_builder),
         }
+        .with_env_funder()
     }
 
     /// Set API credentials
@@ -282,6 +283,14 @@ impl ClobClient {
 
         order_builder.set_funder(address);
         Ok(())
+    }
+
+    fn with_env_funder(mut self) -> Self {
+        if let Ok(funder) = env::var("POLY_FUNDER") {
+            self.set_funder(&funder)
+                .unwrap_or_else(|err| panic!("Failed to set funder from POLY_FUNDER: {}", err));
+        }
+        self
     }
 
     /// Override the Gamma API base URL
