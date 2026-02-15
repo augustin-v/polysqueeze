@@ -56,6 +56,7 @@ pub struct WssUserTradeMessage {
     #[serde(default)]
     pub maker_orders: Vec<MakerOrder>,
     pub market: String,
+    #[serde(default)]
     pub matchtime: String,
     pub outcome: String,
     pub owner: String,
