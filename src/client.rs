@@ -23,6 +23,7 @@ use std::env;
 use std::str::FromStr;
 use tracing::warn;
 
+const DEFAULT_CLOB_BASE: &str = "https://clob.polymarket.com";
 const DEFAULT_GAMMA_BASE: &str = "https://gamma-api.polymarket.com";
 const DEFAULT_WS_BASE: &str = "wss://ws-subscriptions-clob.polymarket.com/ws/";
 const DEFAULT_RTDS_BASE: &str = "wss://ws-live-data.polymarket.com";
@@ -187,6 +188,22 @@ impl ClobClient {
             api_creds: None,
             order_builder: None,
         }
+    }
+
+    /// Create an authenticated client using default base URL and chain ID.
+    ///
+    /// This performs L1 auth to create/derive API creds, then constructs the L2 client.
+    pub async fn new_with_auth(private_key: &str, funder: Option<&str>) -> Result<Self> {
+        let l1_client = ClobClient::with_l1_headers(DEFAULT_CLOB_BASE, private_key, 137);
+        let creds = l1_client.create_or_derive_api_key(None).await?;
+        let mut client =
+            ClobClient::with_l2_headers(DEFAULT_CLOB_BASE, private_key, 137, creds);
+
+        if let Some(funder) = funder {
+            client.set_funder(funder)?;
+        }
+
+        Ok(client)
     }
 
     fn encode_cursor(cursor: u64) -> String {
