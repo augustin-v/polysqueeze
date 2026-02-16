@@ -25,11 +25,7 @@ async fn main() -> Result<()> {
 
     let l1_client = ClobClient::with_l1_headers(&base_url, &private_key, chain_id);
     let creds = l1_client.create_or_derive_api_key(None).await?;
-    let mut client = ClobClient::with_l2_headers(&base_url, &private_key, chain_id, creds.clone());
-
-    if let Ok(funder) = env::var("POLY_FUNDER") {
-        client.set_funder(&funder)?;
-    }
+    let client = ClobClient::with_l2_headers(&base_url, &private_key, chain_id, creds.clone());
 
     let mut params = BalanceAllowanceParams::default();
     params.asset_type = Some(AssetType::COLLATERAL);
