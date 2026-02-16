@@ -196,8 +196,7 @@ impl ClobClient {
     pub async fn new_with_auth(private_key: &str, funder: Option<&str>) -> Result<Self> {
         let l1_client = ClobClient::with_l1_headers(DEFAULT_CLOB_BASE, private_key, 137);
         let creds = l1_client.create_or_derive_api_key(None).await?;
-        let mut client =
-            ClobClient::with_l2_headers(DEFAULT_CLOB_BASE, private_key, 137, creds);
+        let mut client = ClobClient::with_l2_headers(DEFAULT_CLOB_BASE, private_key, 137, creds);
 
         if let Some(funder) = funder {
             client.set_funder(funder)?;

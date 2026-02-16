@@ -3,7 +3,10 @@ use std::env;
 
 /// Helper to fail fast if a required environment variable is missing.
 fn env_var(key: &str) -> String {
-    env::var(key).expect(&format!("{} must be set for the new_with_auth example", key))
+    env::var(key).expect(&format!(
+        "{} must be set for the new_with_auth example",
+        key
+    ))
 }
 
 #[tokio::main]
