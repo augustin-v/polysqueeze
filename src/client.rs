@@ -21,6 +21,7 @@ use serde::de::DeserializeOwned;
 use serde_json::{self, Value};
 use std::env;
 use std::str::FromStr;
+use tracing::warn;
 
 const DEFAULT_GAMMA_BASE: &str = "https://gamma-api.polymarket.com";
 const DEFAULT_WS_BASE: &str = "wss://ws-subscriptions-clob.polymarket.com/ws/";
@@ -287,8 +288,9 @@ impl ClobClient {
 
     fn with_env_funder(mut self) -> Self {
         if let Ok(funder) = env::var("POLY_FUNDER") {
-            self.set_funder(&funder)
-                .unwrap_or_else(|err| panic!("Failed to set funder from POLY_FUNDER: {}", err));
+            if let Err(err) = self.set_funder(&funder) {
+                warn!("Failed to set funder from POLY_FUNDER: {}", err);
+            }
         }
         self
     }
