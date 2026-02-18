@@ -24,7 +24,7 @@ async fn main() -> Result<()> {
     // CLOB auth process, more info here https://docs.polymarket.com/developers/CLOB/authentication
     let l1_client = ClobClient::with_l1_headers(&base_url, &private_key, chain_id);
     let creds = l1_client.create_or_derive_api_key(None).await?;
-    let mut client = ClobClient::with_l2_headers(&base_url, &private_key, chain_id, creds.clone());
+    let client = ClobClient::with_l2_headers(&base_url, &private_key, chain_id, creds.clone());
 
     let gamma_params = GammaListParams {
         limit: Some(5), // how many markets to fetch max
