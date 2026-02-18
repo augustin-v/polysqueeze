@@ -25,8 +25,7 @@ async fn main() -> Result<()> {
 
     let l1_client = ClobClient::with_l1_headers(&base_url, &private_key, chain_id);
     let creds = l1_client.create_or_derive_api_key(None).await?;
-    let mut l2_client =
-        ClobClient::with_l2_headers(&base_url, &private_key, chain_id, creds.clone());
+    let l2_client = ClobClient::with_l2_headers(&base_url, &private_key, chain_id, creds.clone());
 
     let min_liquidity = env::var("POLY_WSS_MIN_LIQUIDITY")
         .ok()

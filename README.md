@@ -1,8 +1,8 @@
 # Polysqueeze
 
-Polysqueeze is a Rust SDK for interacting with Polymarket's REST APIs; the markets,
-orders, WSS channel, and authentication helpers are implemented today. If you hit a 401 or other auth pain point, raise
-an issue and the implementation is guaranteed to keep evolving.
+Polysqueeze is a Rust SDK for interacting with Polymarket's CLOB (trading), Gamma
+(market data), and WebSocket APIs. If you hit auth edge-cases (401s, signature
+mismatches, etc.), please open an issue with repro details.
 
 
 
@@ -13,8 +13,8 @@ an issue and the implementation is guaranteed to keep evolving.
 - Order creation flows have live regression coverage for the single-order path;
   batch/multi-order flows still need more testing and contributions are welcome.
 - Gamma data types for markets, tokens, order books, rewards, etc.
-- Configuration helpers for Polygon mainnet + testnet (testing has only been done on mainnet), plus shared utils for signing,
-  math, and fills.
+- WebSocket helpers for public market events and authenticated user events (see `examples/wss_*.rs`).
+- Configuration helpers for Polygon mainnet (137) and testnet (80002), plus shared utils for signing, math, and fills.
 
 ## Quickstart
 
@@ -41,7 +41,6 @@ async fn main() -> polysqueeze::Result<()> {
     let creds = l1_client.create_or_derive_api_key(None).await?;
 
     let mut client = ClobClient::with_l2_headers(base_url, &private_key, 137, creds.clone());
-    client.set_api_creds(creds.clone());
 
     let gamma_params = GammaListParams {
         limit: Some(5),
@@ -50,8 +49,10 @@ async fn main() -> polysqueeze::Result<()> {
     let market_data = client.get_markets(None, Some(&gamma_params)).await?;
     println!("{} markets fetched", market_data.data.len());
 
+    // Replace with a real CLOB token id (see `market_data` or use `.env.example` + examples).
+    let token_id = "token-id-here";
     let order_args = OrderArgs::new(
-        "token-example",
+        token_id,
         Decimal::new(5000, 4),
         Decimal::new(1, 0),
         Side::BUY,
@@ -64,13 +65,20 @@ async fn main() -> polysqueeze::Result<()> {
 }
 ```
 
-3. Explore `ws::WebSocketStream` (WIP TODO)  for real-time
-   updates, or use `book::OrderBookCache` for a cached view of the order book.
+3. For WebSockets, start with the typed `wss::{WssMarketClient, WssUserClient}` helpers (see
+   `examples/wss_market.rs` and `examples/wss_user.rs`). For lower-level streaming primitives,
+   see the `ws` module.
 
-## Example
+## Examples
 
-The smoke-testing logic from `tests/place_order.rs` is also available as
-`examples/order.rs`. To run it locally:
+- `examples/order.rs`: derive an API key and place a tiny order (opt-in).
+- `examples/wss_market.rs`: subscribe to public market channel events.
+- `examples/wss_user.rs`: authenticated user channel (orders/trades) events.
+- `examples/wss_cancel.rs`: cancel an order by ID.
+- `examples/new_with_auth.rs`: create a client using auth helpers.
+- `examples/balance_allowance.rs`: inspect balances/allowances.
+
+The smoke-testing logic from `tests/place_order.rs` is also available as `examples/order.rs`. To run it locally:
 
 ```bash
 cargo run --example order
@@ -122,9 +130,14 @@ such as `Market`, `MarketOrderArgs`, and `OrderBookSummary`.
 Test order placement with this command (make sure env variables are set). This
 exercise is what we currently rely on as basic coverage for the order APIs:
 ```bash
-# WARNING: this test placese a tiny order on Polymarket ~0.006 USDC
+# WARNING: this test places a small real order on Polymarket
 RUN_PLACE_ORDER_TEST=1 cargo test place_order -- --nocapture
 ```
+
+Other live tests are opt-in as well:
+- `RUN_AUTH_TEST=1` (auth derivation/verification)
+- `RUN_GAMMA_TESTS=1` (Gamma live endpoints / `ClobClient::get_markets`)
+- `RUN_DATA_API_TESTS=1` (data-api `/value` + `/positions`)
 
 ### Formatting and Lints
 
@@ -136,5 +149,4 @@ cargo clippy
 
 ## Contributing
 
-Contributions are welcome!
-Look for any open issue in the [Issues](https://github.com/augustin-v/polysqueeze/issues/) page, or open a pull request after forking the project.
+Contributions are welcome! See `CONTRIBUTING.md` for setup, test commands, and PR guidelines.
