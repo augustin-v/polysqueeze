@@ -18,7 +18,6 @@ use reqwest::header::HeaderName;
 use reqwest::{Method, RequestBuilder};
 use rust_decimal::Decimal;
 use rust_decimal::prelude::FromPrimitive;
-use serde::de::DeserializeOwned;
 use serde_json::{self, Value};
 use std::env;
 use std::str::FromStr;
@@ -1790,136 +1789,48 @@ impl ClobClient {
         &self,
         params: Option<&crate::types::GammaListParams>,
     ) -> Result<Vec<crate::types::GammaEvent>> {
-        let mut request = self.http_client.get(self.gamma_url("events"));
-
-        if let Some(options) = params {
-            request = request.query(&options.to_query_params());
-        }
-
-        let response = request
-            .send()
-            .await
-            .map_err(|e| PolyError::network(format!("Request failed: {}", e), e))?;
-
-        if !response.status().is_success() {
-            return Err(PolyError::api(
-                response.status().as_u16(),
-                "Failed to fetch Gamma events",
-            ));
-        }
-
-        let payload: Value = response
-            .json()
-            .await
-            .map_err(|e| PolyError::parse(format!("Failed to parse response: {}", e), None))?;
-
-        self.parse_gamma_list(payload, "Gamma events")
+        self.gamma_client.get_events(params).await
     }
 
     /// Fetch a single Gamma event by slug
     pub async fn get_event_by_slug(&self, slug: &str) -> Result<crate::types::GammaEvent> {
-        let response = self
-            .http_client
-            .get(self.gamma_url(&format!("events/slug/{}", slug)))
-            .send()
-            .await
-            .map_err(|e| PolyError::network(format!("Request failed: {}", e), e))?;
-
-        if !response.status().is_success() {
-            return Err(PolyError::api(
-                response.status().as_u16(),
-                "Failed to fetch Gamma event",
-            ));
-        }
-
-        response
-            .json::<crate::types::GammaEvent>()
-            .await
-            .map_err(|e| PolyError::parse(format!("Failed to parse response: {}", e), None))
+        self.gamma_client.get_event_by_slug(slug).await
     }
 
     /// Fetch a single Gamma event by numeric ID
     pub async fn get_event_by_id(&self, event_id: &str) -> Result<crate::types::GammaEvent> {
-        let response = self
-            .http_client
-            .get(self.gamma_url(&format!("events/{}", event_id)))
-            .send()
-            .await
-            .map_err(|e| PolyError::network(format!("Request failed: {}", e), e))?;
-
-        if !response.status().is_success() {
-            return Err(PolyError::api(
-                response.status().as_u16(),
-                "Failed to fetch Gamma event",
-            ));
-        }
-
-        response
-            .json::<crate::types::GammaEvent>()
-            .await
-            .map_err(|e| PolyError::parse(format!("Failed to parse response: {}", e), None))
+        self.gamma_client.get_event_by_id(event_id).await
     }
 
     /// Fetch available Gamma tags
     pub async fn get_tags(&self) -> Result<Vec<crate::types::Tag>> {
-        let response = self
-            .http_client
-            .get(self.gamma_url("tags"))
-            .send()
-            .await
-            .map_err(|e| PolyError::network(format!("Request failed: {}", e), e))?;
-
-        if !response.status().is_success() {
-            return Err(PolyError::api(
-                response.status().as_u16(),
-                "Failed to fetch Gamma tags",
-            ));
-        }
-
-        let payload: Value = response
-            .json()
-            .await
-            .map_err(|e| PolyError::parse(format!("Failed to parse response: {}", e), None))?;
-
-        self.parse_gamma_list(payload, "Gamma tags")
+        let gamma_tags = self.gamma_client.get_tags().await?;
+        Ok(gamma_tags
+            .into_iter()
+            .map(|gt| crate::types::Tag {
+                id: Some(gt.id),
+                slug: gt.slug,
+                name: Some(gt.name),
+                description: None,
+                metadata: serde_json::Value::default(),
+            })
+            .collect())
     }
 
     /// Fetch available Gamma sports metadata
     pub async fn get_sports(&self) -> Result<Vec<crate::types::Sport>> {
-        let response = self
-            .http_client
-            .get(self.gamma_url("sports"))
-            .send()
-            .await
-            .map_err(|e| PolyError::network(format!("Request failed: {}", e), e))?;
-
-        if !response.status().is_success() {
-            return Err(PolyError::api(
-                response.status().as_u16(),
-                "Failed to fetch Gamma sports",
-            ));
-        }
-
-        let payload: Value = response
-            .json()
-            .await
-            .map_err(|e| PolyError::parse(format!("Failed to parse response: {}", e), None))?;
-
-        self.parse_gamma_list(payload, "Gamma sports")
-    }
-
-    fn parse_gamma_list<T>(&self, value: Value, ctx: &str) -> Result<Vec<T>>
-    where
-        T: DeserializeOwned,
-    {
-        let payload = if let Some(data) = value.get("data") {
-            data.clone()
-        } else {
-            value
-        };
-
-        serde_json::from_value::<Vec<T>>(payload)
-            .map_err(|err| PolyError::parse(format!("Failed to parse {}: {}", ctx, err), None))
+        let sport_names = self.gamma_client.get_sports().await?;
+        Ok(sport_names
+            .into_iter()
+            .map(|name| crate::types::Sport {
+                id: None,
+                name: Some(name),
+                description: None,
+                tag_ids: vec![],
+                tags: vec![],
+                metadata: serde_json::Value::default(),
+            })
+            .collect())
     }
 }
 
