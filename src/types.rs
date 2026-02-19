@@ -1179,8 +1179,25 @@ pub struct GammaListParams {
     pub order: Option<String>,
     pub ascending: Option<bool>,
     pub liquidity_num_min: Option<Decimal>,
+    pub liquidity_num_max: Option<Decimal>,
     pub end_date_max: Option<DateTime<Utc>>,
     pub start_date_min: Option<DateTime<Utc>>,
+    pub start_date_max: Option<DateTime<Utc>>,
+    pub end_date_min: Option<DateTime<Utc>>,
+    pub volume_num_min: Option<Decimal>,
+    pub volume_num_max: Option<Decimal>,
+    pub id: Option<Vec<i64>>,
+    pub slug: Option<Vec<String>>,
+    pub clob_token_ids: Option<Vec<String>>,
+    pub condition_ids: Option<Vec<String>>,
+    pub market_maker_address: Option<Vec<String>>,
+    pub cyom: Option<bool>,
+    pub uma_resolution_status: Option<String>,
+    pub game_id: Option<String>,
+    pub sports_market_types: Option<Vec<String>>,
+    pub rewards_min_size: Option<Decimal>,
+    pub question_ids: Option<Vec<String>>,
+    pub include_tag: Option<bool>,
 }
 
 impl GammaListParams {
@@ -1188,17 +1205,122 @@ impl GammaListParams {
         Self::default()
     }
 
+    // Builder methods for new array filter parameters
+    pub fn id(mut self, ids: Vec<i64>) -> Self {
+        self.id = Some(ids);
+        self
+    }
+
+    pub fn slug(mut self, slugs: Vec<String>) -> Self {
+        self.slug = Some(slugs);
+        self
+    }
+
+    pub fn clob_token_ids(mut self, token_ids: Vec<String>) -> Self {
+        self.clob_token_ids = Some(token_ids);
+        self
+    }
+
+    pub fn condition_ids(mut self, condition_ids: Vec<String>) -> Self {
+        self.condition_ids = Some(condition_ids);
+        self
+    }
+
+    pub fn market_maker_address(mut self, addresses: Vec<String>) -> Self {
+        self.market_maker_address = Some(addresses);
+        self
+    }
+
+    pub fn sports_market_types(mut self, types: Vec<String>) -> Self {
+        self.sports_market_types = Some(types);
+        self
+    }
+
+    pub fn question_ids(mut self, question_ids: Vec<String>) -> Self {
+        self.question_ids = Some(question_ids);
+        self
+    }
+
+    // Builder methods for new numeric parameters
+    pub fn liquidity_num_max(mut self, max: Decimal) -> Self {
+        self.liquidity_num_max = Some(max);
+        self
+    }
+
+    pub fn volume_num_min(mut self, min: Decimal) -> Self {
+        self.volume_num_min = Some(min);
+        self
+    }
+
+    pub fn volume_num_max(mut self, max: Decimal) -> Self {
+        self.volume_num_max = Some(max);
+        self
+    }
+
+    pub fn rewards_min_size(mut self, size: Decimal) -> Self {
+        self.rewards_min_size = Some(size);
+        self
+    }
+
+    // Builder methods for new date parameters
+    pub fn start_date_max(mut self, date: DateTime<Utc>) -> Self {
+        self.start_date_max = Some(date);
+        self
+    }
+
+    pub fn end_date_min(mut self, date: DateTime<Utc>) -> Self {
+        self.end_date_min = Some(date);
+        self
+    }
+
+    // Builder methods for new boolean parameters
+    pub fn cyom(mut self, cyom: bool) -> Self {
+        self.cyom = Some(cyom);
+        self
+    }
+
+    pub fn include_tag(mut self, include: bool) -> Self {
+        self.include_tag = Some(include);
+        self
+    }
+
+    // Builder methods for new string parameters
+    pub fn uma_resolution_status(mut self, status: String) -> Self {
+        self.uma_resolution_status = Some(status);
+        self
+    }
+
+    pub fn game_id(mut self, game_id: String) -> Self {
+        self.game_id = Some(game_id);
+        self
+    }
+
     pub fn to_query_params(&self) -> Vec<(&str, String)> {
-        let mut params = Vec::with_capacity(8);
+        let mut params = Vec::with_capacity(28);
+
+        // Pagination params
         if let Some(limit) = self.limit {
             params.push(("limit", limit.to_string()));
         }
         if let Some(offset) = self.offset {
             params.push(("offset", offset.to_string()));
         }
+
+        // Boolean flags
         if let Some(closed) = self.closed {
             params.push(("closed", closed.to_string()));
         }
+        if let Some(cyom) = self.cyom {
+            params.push(("cyom", cyom.to_string()));
+        }
+        if let Some(include_tag) = self.include_tag {
+            params.push(("include_tag", include_tag.to_string()));
+        }
+        if let Some(ascending) = self.ascending {
+            params.push(("ascending", ascending.to_string()));
+        }
+
+        // String filters
         if let Some(tag_id) = &self.tag_id {
             params.push(("tag_id", tag_id.clone()));
         }
@@ -1211,18 +1333,87 @@ impl GammaListParams {
         if let Some(order) = &self.order {
             params.push(("order", order.clone()));
         }
-        if let Some(ascending) = self.ascending {
-            params.push(("ascending", ascending.to_string()));
+        if let Some(uma_resolution_status) = &self.uma_resolution_status {
+            params.push(("uma_resolution_status", uma_resolution_status.clone()));
         }
+        if let Some(game_id) = &self.game_id {
+            params.push(("game_id", game_id.clone()));
+        }
+
+        // Numeric filters
         if let Some(liquidity_num_min) = &self.liquidity_num_min {
             params.push(("liquidity_num_min", liquidity_num_min.to_string()));
+        }
+        if let Some(liquidity_num_max) = &self.liquidity_num_max {
+            params.push(("liquidity_num_max", liquidity_num_max.to_string()));
+        }
+        if let Some(volume_num_min) = &self.volume_num_min {
+            params.push(("volume_num_min", volume_num_min.to_string()));
+        }
+        if let Some(volume_num_max) = &self.volume_num_max {
+            params.push(("volume_num_max", volume_num_max.to_string()));
+        }
+        if let Some(rewards_min_size) = &self.rewards_min_size {
+            params.push(("rewards_min_size", rewards_min_size.to_string()));
+        }
+
+        // Date filters
+        if let Some(start_date_min) = &self.start_date_min {
+            params.push(("start_date_min", start_date_min.to_rfc3339()));
+        }
+        if let Some(start_date_max) = &self.start_date_max {
+            params.push(("start_date_max", start_date_max.to_rfc3339()));
+        }
+        if let Some(end_date_min) = &self.end_date_min {
+            params.push(("end_date_min", end_date_min.to_rfc3339()));
         }
         if let Some(end_date_max) = &self.end_date_max {
             params.push(("end_date_max", end_date_max.to_rfc3339()));
         }
-        if let Some(start_date_min) = &self.start_date_min {
-            params.push(("start_date_min", start_date_min.to_rfc3339()));
+
+        // Array filters - join with ","
+        if let Some(id) = &self.id {
+            if !id.is_empty() {
+                params.push((
+                    "id",
+                    id.iter()
+                        .map(|i| i.to_string())
+                        .collect::<Vec<_>>()
+                        .join(","),
+                ));
+            }
         }
+        if let Some(slug) = &self.slug {
+            if !slug.is_empty() {
+                params.push(("slug", slug.join(",")));
+            }
+        }
+        if let Some(clob_token_ids) = &self.clob_token_ids {
+            if !clob_token_ids.is_empty() {
+                params.push(("clob_token_ids", clob_token_ids.join(",")));
+            }
+        }
+        if let Some(condition_ids) = &self.condition_ids {
+            if !condition_ids.is_empty() {
+                params.push(("condition_ids", condition_ids.join(",")));
+            }
+        }
+        if let Some(market_maker_address) = &self.market_maker_address {
+            if !market_maker_address.is_empty() {
+                params.push(("market_maker_address", market_maker_address.join(",")));
+            }
+        }
+        if let Some(sports_market_types) = &self.sports_market_types {
+            if !sports_market_types.is_empty() {
+                params.push(("sports_market_types", sports_market_types.join(",")));
+            }
+        }
+        if let Some(question_ids) = &self.question_ids {
+            if !question_ids.is_empty() {
+                params.push(("question_ids", question_ids.join(",")));
+            }
+        }
+
         params
     }
 }

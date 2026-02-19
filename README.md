@@ -42,8 +42,15 @@ async fn main() -> polysqueeze::Result<()> {
 
     let mut client = ClobClient::with_l2_headers(base_url, &private_key, 137, creds.clone());
 
+    // Filter markets with various criteria
     let gamma_params = GammaListParams {
-        limit: Some(5),
+        limit: Some(10),
+        closed: Some(false),                  // Exclude closed markets
+        liquidity_num_min: Some(Decimal::from(1000)),  // Min liquidity
+        liquidity_num_max: Some(Decimal::from(1000000)), // Max liquidity
+        volume_num_min: Some(Decimal::from(10000)),    // Min volume
+        cyom: Some(false),                    // Exclude create-your-own markets
+        include_tag: Some(true),              // Include tag data
         ..Default::default()
     };
     let market_data = client.get_markets(None, Some(&gamma_params)).await?;
@@ -124,6 +131,32 @@ Use the `client` module to call Gamma endpoints such as `/markets`, `/events`,
 paths have live regression coverage today; feel free to extend coverage to more
 endpoints or submit fixes. The `types` module contains strongly typed responses
 such as `Market`, `MarketOrderArgs`, and `OrderBookSummary`.
+
+### GammaListParams Reference
+
+The following parameters are available for filtering markets when calling
+`ClobClient::get_markets()`:
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `limit` | `Option<i32>` | Maximum number of markets to return |
+| `closed` | `Option<bool>` | Include or exclude closed markets |
+| `liquidity_num_min` | `Option<Decimal>` | Minimum liquidity threshold |
+| `liquidity_num_max` | `Option<Decimal>` | Maximum liquidity threshold |
+| `volume_num_min` | `Option<Decimal>` | Minimum trading volume threshold |
+| `volume_num_max` | `Option<Decimal>` | Maximum trading volume threshold |
+| `cyom` | `Option<bool>` | Include create-your-own markets (CYOM) |
+| `include_tag` | `Option<bool>` | Include tag metadata in response |
+| `tag` | `Option<String>` | Filter by specific tag |
+| `related` | `Option<bool>` | Include related markets |
+| `archived` | `Option<bool>` | Include archived markets |
+| `order_by` | `Option<String>` | Sort field (e.g., "volume", "liquidity", "created_date") |
+| `order_dir` | `Option<String>` | Sort direction ("asc" or "desc") |
+| `currency` | `Option<String>` | Currency for pricing (default: "USD") |
+| `maker_fee` | `Option<f64>` | Maker fee filter |
+| `taker_fee` | `Option<f64>` | Taker fee filter |
+| `pfm` | `Option<bool>` | Profit/fee mode |
+| `search` | `Option<String>` | Free text search across markets |
 
 ## Testing
 

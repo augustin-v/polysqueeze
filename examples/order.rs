@@ -27,9 +27,21 @@ async fn main() -> Result<()> {
     let client = ClobClient::with_l2_headers(&base_url, &private_key, chain_id, creds.clone());
 
     let gamma_params = GammaListParams {
-        limit: Some(5), // how many markets to fetch max
+        limit: Some(5),
+        liquidity_num_min: Some(Decimal::from(1000)),
+        volume_num_min: Some(Decimal::from(10000)),
         ..Default::default()
     };
+
+    // Example using new parameters with builder pattern
+    // let gamma_params = GammaListParams::builder()
+    //     .limit(10)
+    //     .liquidity_num_min(Decimal::from(1000))
+    //     .volume_num_min(Decimal::from(10000))
+    //     .cyom(false)
+    //     .include_tag(true)
+    //     .game_id("some-game-id".to_string())
+    //     .build();
     let markets_response = client.get_markets(None, Some(&gamma_params)).await?;
     let market = markets_response
         .data
