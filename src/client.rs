@@ -4,6 +4,7 @@
 //! Polymarket, optimized for high-frequency trading environments.
 
 use crate::auth::{create_l1_headers, create_l2_headers};
+use crate::api::gamma::GammaClient;
 use crate::errors::{PolyError, Result};
 use crate::types::{OrderOptions, PostOrder, SignedOrderRequest};
 use alloy_primitives::{Address, U256};
@@ -172,6 +173,7 @@ pub struct ClobClient {
     signer: Option<PrivateKeySigner>,
     api_creds: Option<ApiCreds>,
     order_builder: Option<crate::orders::OrderBuilder>,
+    gamma_client: GammaClient,
 }
 
 impl ClobClient {
@@ -187,6 +189,7 @@ impl ClobClient {
             signer: None,
             api_creds: None,
             order_builder: None,
+            gamma_client: GammaClient::new(),
         }
     }
 
@@ -253,6 +256,7 @@ impl ClobClient {
             signer: Some(signer),
             api_creds: None,
             order_builder: Some(order_builder),
+            gamma_client: GammaClient::new(),
         }
     }
 
@@ -279,6 +283,7 @@ impl ClobClient {
             signer: Some(signer),
             api_creds: Some(api_creds),
             order_builder: Some(order_builder),
+            gamma_client: GammaClient::new(),
         }
         .with_env_funder()
     }
@@ -1709,186 +1714,7 @@ impl ClobClient {
         next_cursor: Option<&str>,
         params: Option<&crate::types::GammaListParams>,
     ) -> Result<crate::types::MarketsResponse> {
-        let offset = params
-            .and_then(|options| options.offset.map(u64::from))
-            .or_else(|| next_cursor.and_then(Self::decode_cursor))
-            .unwrap_or(0);
-
-        let limit = params
-            .and_then(|options| options.limit)
-            .unwrap_or(GAMMA_MARKETS_LIMIT);
-
-        let mut query = vec![("limit", limit.to_string()), ("offset", offset.to_string())];
-
-        // Always enforce a minimum liquidity threshold (default 10,000 when not specified).
-        let liquidity_min = params
-            .and_then(|options| options.liquidity_num_min)
-            .unwrap_or_else(|| Decimal::from(10_000));
-        query.push(("liquidity_num_min", liquidity_min.to_string()));
-
-        // Default end date to at least three weeks from now.
-        let min_end_date = Utc::now() + Duration::weeks(3);
-        let end_date_max = params
-            .and_then(|options| options.end_date_max)
-            .unwrap_or(min_end_date);
-        let end_date_max = if end_date_max < min_end_date {
-            min_end_date
-        } else {
-            end_date_max
-        };
-        query.push(("end_date_max", end_date_max.to_rfc3339()));
-
-        if let Some(start_date_min) = params.and_then(|options| options.start_date_min) {
-            query.push(("start_date_min", start_date_min.to_rfc3339()));
-        }
-
-        if let Some(options) = params {
-            if let Some(closed) = options.closed {
-                query.push(("closed", closed.to_string()));
-            } else {
-                query.push(("closed", "false".to_string()));
-            }
-
-            if let Some(tag_id) = &options.tag_id {
-                query.push(("tag_id", tag_id.clone()));
-            }
-            if let Some(exclude_tag_id) = &options.exclude_tag_id {
-                query.push(("exclude_tag_id", exclude_tag_id.clone()));
-            }
-            if let Some(related_tags) = &options.related_tags {
-                query.push(("related_tags", related_tags.clone()));
-            }
-            if let Some(order) = &options.order {
-                query.push(("order", order.clone()));
-            }
-            if let Some(ascending) = options.ascending {
-                query.push(("ascending", ascending.to_string()));
-            }
-
-            // Boolean flags
-            if let Some(cyom) = options.cyom {
-                query.push(("cyom", cyom.to_string()));
-            }
-            if let Some(include_tag) = options.include_tag {
-                query.push(("include_tag", include_tag.to_string()));
-            }
-
-            // String filters
-            if let Some(uma_resolution_status) = &options.uma_resolution_status {
-                query.push(("uma_resolution_status", uma_resolution_status.clone()));
-            }
-            if let Some(game_id) = &options.game_id {
-                query.push(("game_id", game_id.clone()));
-            }
-
-            // Numeric ranges
-            if let Some(liquidity_num_max) = options.liquidity_num_max {
-                query.push(("liquidity_num_max", liquidity_num_max.to_string()));
-            }
-            if let Some(volume_num_min) = options.volume_num_min {
-                query.push(("volume_num_min", volume_num_min.to_string()));
-            }
-            if let Some(volume_num_max) = options.volume_num_max {
-                query.push(("volume_num_max", volume_num_max.to_string()));
-            }
-            if let Some(rewards_min_size) = options.rewards_min_size {
-                query.push(("rewards_min_size", rewards_min_size.to_string()));
-            }
-
-            // Date ranges
-            if let Some(start_date_max) = options.start_date_max {
-                query.push(("start_date_max", start_date_max.to_rfc3339()));
-            }
-            if let Some(end_date_min) = options.end_date_min {
-                query.push(("end_date_min", end_date_min.to_rfc3339()));
-            }
-
-            // Array filters - join with ","
-            if let Some(id) = &options.id {
-                if !id.is_empty() {
-                    query.push((
-                        "id",
-                        id.iter()
-                            .map(|i| i.to_string())
-                            .collect::<Vec<_>>()
-                            .join(","),
-                    ));
-                }
-            }
-            if let Some(slug) = &options.slug {
-                if !slug.is_empty() {
-                    query.push(("slug", slug.join(",")));
-                }
-            }
-            if let Some(clob_token_ids) = &options.clob_token_ids {
-                if !clob_token_ids.is_empty() {
-                    query.push(("clob_token_ids", clob_token_ids.join(",")));
-                }
-            }
-            if let Some(condition_ids) = &options.condition_ids {
-                if !condition_ids.is_empty() {
-                    query.push(("condition_ids", condition_ids.join(",")));
-                }
-            }
-            if let Some(market_maker_address) = &options.market_maker_address {
-                if !market_maker_address.is_empty() {
-                    query.push(("market_maker_address", market_maker_address.join(",")));
-                }
-            }
-            if let Some(sports_market_types) = &options.sports_market_types {
-                if !sports_market_types.is_empty() {
-                    query.push(("sports_market_types", sports_market_types.join(",")));
-                }
-            }
-            if let Some(question_ids) = &options.question_ids {
-                if !question_ids.is_empty() {
-                    query.push(("question_ids", question_ids.join(",")));
-                }
-            }
-        } else {
-            query.push(("closed", "false".to_string()));
-        }
-
-        let response = self
-            .http_client
-            .get(self.gamma_url("markets"))
-            .query(&query)
-            .send()
-            .await
-            .map_err(|e| PolyError::network(format!("Request failed: {}", e), e))?;
-
-        if !response.status().is_success() {
-            return Err(PolyError::api(
-                response.status().as_u16(),
-                "Failed to fetch markets",
-            ));
-        }
-
-        let body = response
-            .text()
-            .await
-            .map_err(|e| PolyError::parse(format!("Failed to read response body: {}", e), None))?;
-
-        let gamma_markets: Vec<crate::types::GammaMarket> = serde_json::from_str(&body)
-            .map_err(|e| PolyError::parse(format!("Failed to parse response: {}", e), None))?;
-
-        let count = gamma_markets.len();
-        let next_cursor = if count < limit as usize {
-            None
-        } else {
-            Some(Self::encode_cursor(offset + count as u64))
-        };
-        let markets = gamma_markets
-            .into_iter()
-            .map(|gamma| gamma.into())
-            .collect::<Vec<_>>();
-
-        Ok(crate::types::MarketsResponse {
-            limit: Decimal::from(limit),
-            count: Decimal::from_i64(count as i64).unwrap_or(Decimal::ZERO),
-            next_cursor,
-            data: markets,
-        })
+        self.gamma_client.get_markets(next_cursor, params).await
     }
 
     /// Get simplified markets with pagination
