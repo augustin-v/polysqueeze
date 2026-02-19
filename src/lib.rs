@@ -3,6 +3,7 @@
 //! Use it to authenticate, build signed orders, stream live book data, or query
 //! historical fills and markets.
 
+pub mod api;
 pub mod auth;
 pub mod book;
 pub mod client;
@@ -15,6 +16,8 @@ pub mod types;
 pub mod utils;
 pub mod ws;
 pub mod wss;
+
+pub use api::GammaClient;
 
 pub use crate::client::{
     ClobClient, CreateOrderOptions, DataApiClient, MarketClient, OrderArgs, PolyClient,
