@@ -245,10 +245,7 @@ impl GammaClient {
         todo!()
     }
 
-    pub async fn get_events(
-        &self,
-        params: Option<&GammaListParams>,
-    ) -> Result<Vec<GammaEvent>> {
+    pub async fn get_events(&self, params: Option<&GammaListParams>) -> Result<Vec<GammaEvent>> {
         let mut request = self.http_client.get(self.gamma_url("events"));
 
         if let Some(options) = params {

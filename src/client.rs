@@ -3,8 +3,8 @@
 //! This module provides a production-ready client for interacting with
 //! Polymarket, optimized for high-frequency trading environments.
 
-use crate::auth::{create_l1_headers, create_l2_headers};
 use crate::api::gamma::GammaClient;
+use crate::auth::{create_l1_headers, create_l2_headers};
 use crate::errors::{PolyError, Result};
 use crate::types::{OrderOptions, PostOrder, SignedOrderRequest};
 use alloy_primitives::{Address, U256};
