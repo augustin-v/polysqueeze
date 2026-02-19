@@ -34,3 +34,33 @@ async fn clob_client_get_markets_live() {
     );
     println!("markets are: {:?}", response.data[1]);
 }
+
+#[tokio::test]
+async fn clob_client_get_markets_with_all_params_live() {
+    if std::env::var("RUN_GAMMA_TESTS").unwrap_or_default() != "1" {
+        eprintln!("Skipping ClobClient::get_markets with all params live test (set RUN_GAMMA_TESTS=1)");
+        return;
+    }
+
+    let client = ClobClient::new("https://clob.polymarket.com").with_gamma_base("https://gamma-api.polymarket.com");
+
+    use rust_decimal::Decimal;
+
+    let params = GammaListParams {
+        limit: Some(5),
+        closed: Some(false),
+        liquidity_num_min: Some(Decimal::from(1000)),
+        liquidity_num_max: Some(Decimal::from(1000000)),
+        volume_num_min: Some(Decimal::from(10000)),
+        cyom: Some(false),
+        include_tag: Some(true),
+        ..Default::default()
+    };
+
+    let markets = client.get_markets(None, Some(&params)).await;
+    assert!(
+        markets.is_ok(),
+        "get_markets with all params responded with error {:?}",
+        markets.err()
+    );
+}
