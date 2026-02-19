@@ -337,7 +337,7 @@ impl GammaClient {
         self.parse_gamma_list(payload, "Gamma tags")
     }
 
-    pub async fn get_sports(&self) -> Result<Vec<String>> {
+    pub async fn get_sports(&self) -> Result<Vec<crate::types::Sport>> {
         let response = self
             .http_client
             .get(self.gamma_url("sports"))

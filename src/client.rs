@@ -318,6 +318,7 @@ impl ClobClient {
     /// Override the Gamma API base URL
     pub fn with_gamma_base(mut self, url: &str) -> Self {
         self.gamma_base_url = url.to_string();
+        self.gamma_client = GammaClient::new().with_base_url(url);
         self
     }
 
@@ -1819,18 +1820,7 @@ impl ClobClient {
 
     /// Fetch available Gamma sports metadata
     pub async fn get_sports(&self) -> Result<Vec<crate::types::Sport>> {
-        let sport_names = self.gamma_client.get_sports().await?;
-        Ok(sport_names
-            .into_iter()
-            .map(|name| crate::types::Sport {
-                id: None,
-                name: Some(name),
-                description: None,
-                tag_ids: vec![],
-                tags: vec![],
-                metadata: serde_json::Value::default(),
-            })
-            .collect())
+        self.gamma_client.get_sports().await
     }
 }
 
