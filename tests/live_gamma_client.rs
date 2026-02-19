@@ -38,11 +38,14 @@ async fn clob_client_get_markets_live() {
 #[tokio::test]
 async fn clob_client_get_markets_with_all_params_live() {
     if std::env::var("RUN_GAMMA_TESTS").unwrap_or_default() != "1" {
-        eprintln!("Skipping ClobClient::get_markets with all params live test (set RUN_GAMMA_TESTS=1)");
+        eprintln!(
+            "Skipping ClobClient::get_markets with all params live test (set RUN_GAMMA_TESTS=1)"
+        );
         return;
     }
 
-    let client = ClobClient::new("https://clob.polymarket.com").with_gamma_base("https://gamma-api.polymarket.com");
+    let client = ClobClient::new("https://clob.polymarket.com")
+        .with_gamma_base("https://gamma-api.polymarket.com");
 
     use rust_decimal::Decimal;
 

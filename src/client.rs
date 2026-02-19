@@ -1806,7 +1806,13 @@ impl ClobClient {
             // Array filters - join with ","
             if let Some(id) = &options.id {
                 if !id.is_empty() {
-                    query.push(("id", id.iter().map(|i| i.to_string()).collect::<Vec<_>>().join(",")));
+                    query.push((
+                        "id",
+                        id.iter()
+                            .map(|i| i.to_string())
+                            .collect::<Vec<_>>()
+                            .join(","),
+                    ));
                 }
             }
             if let Some(slug) = &options.slug {

@@ -1374,7 +1374,13 @@ impl GammaListParams {
         // Array filters - join with ","
         if let Some(id) = &self.id {
             if !id.is_empty() {
-                params.push(("id", id.iter().map(|i| i.to_string()).collect::<Vec<_>>().join(",")));
+                params.push((
+                    "id",
+                    id.iter()
+                        .map(|i| i.to_string())
+                        .collect::<Vec<_>>()
+                        .join(","),
+                ));
             }
         }
         if let Some(slug) = &self.slug {
