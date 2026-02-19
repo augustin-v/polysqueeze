@@ -1764,6 +1764,81 @@ impl ClobClient {
             if let Some(ascending) = options.ascending {
                 query.push(("ascending", ascending.to_string()));
             }
+
+            // Boolean flags
+            if let Some(cyom) = options.cyom {
+                query.push(("cyom", cyom.to_string()));
+            }
+            if let Some(include_tag) = options.include_tag {
+                query.push(("include_tag", include_tag.to_string()));
+            }
+
+            // String filters
+            if let Some(uma_resolution_status) = &options.uma_resolution_status {
+                query.push(("uma_resolution_status", uma_resolution_status.clone()));
+            }
+            if let Some(game_id) = &options.game_id {
+                query.push(("game_id", game_id.clone()));
+            }
+
+            // Numeric ranges
+            if let Some(liquidity_num_max) = options.liquidity_num_max {
+                query.push(("liquidity_num_max", liquidity_num_max.to_string()));
+            }
+            if let Some(volume_num_min) = options.volume_num_min {
+                query.push(("volume_num_min", volume_num_min.to_string()));
+            }
+            if let Some(volume_num_max) = options.volume_num_max {
+                query.push(("volume_num_max", volume_num_max.to_string()));
+            }
+            if let Some(rewards_min_size) = options.rewards_min_size {
+                query.push(("rewards_min_size", rewards_min_size.to_string()));
+            }
+
+            // Date ranges
+            if let Some(start_date_max) = options.start_date_max {
+                query.push(("start_date_max", start_date_max.to_rfc3339()));
+            }
+            if let Some(end_date_min) = options.end_date_min {
+                query.push(("end_date_min", end_date_min.to_rfc3339()));
+            }
+
+            // Array filters - join with ","
+            if let Some(id) = &options.id {
+                if !id.is_empty() {
+                    query.push(("id", id.iter().map(|i| i.to_string()).collect::<Vec<_>>().join(",")));
+                }
+            }
+            if let Some(slug) = &options.slug {
+                if !slug.is_empty() {
+                    query.push(("slug", slug.join(",")));
+                }
+            }
+            if let Some(clob_token_ids) = &options.clob_token_ids {
+                if !clob_token_ids.is_empty() {
+                    query.push(("clob_token_ids", clob_token_ids.join(",")));
+                }
+            }
+            if let Some(condition_ids) = &options.condition_ids {
+                if !condition_ids.is_empty() {
+                    query.push(("condition_ids", condition_ids.join(",")));
+                }
+            }
+            if let Some(market_maker_address) = &options.market_maker_address {
+                if !market_maker_address.is_empty() {
+                    query.push(("market_maker_address", market_maker_address.join(",")));
+                }
+            }
+            if let Some(sports_market_types) = &options.sports_market_types {
+                if !sports_market_types.is_empty() {
+                    query.push(("sports_market_types", sports_market_types.join(",")));
+                }
+            }
+            if let Some(question_ids) = &options.question_ids {
+                if !question_ids.is_empty() {
+                    query.push(("question_ids", question_ids.join(",")));
+                }
+            }
         } else {
             query.push(("closed", "false".to_string()));
         }
