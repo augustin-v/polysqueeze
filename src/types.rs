@@ -1205,6 +1205,96 @@ impl GammaListParams {
         Self::default()
     }
 
+    // Builder methods for new array filter parameters
+    pub fn id(mut self, ids: Vec<i64>) -> Self {
+        self.id = Some(ids);
+        self
+    }
+
+    pub fn slug(mut self, slugs: Vec<String>) -> Self {
+        self.slug = Some(slugs);
+        self
+    }
+
+    pub fn clob_token_ids(mut self, token_ids: Vec<String>) -> Self {
+        self.clob_token_ids = Some(token_ids);
+        self
+    }
+
+    pub fn condition_ids(mut self, condition_ids: Vec<String>) -> Self {
+        self.condition_ids = Some(condition_ids);
+        self
+    }
+
+    pub fn market_maker_address(mut self, addresses: Vec<String>) -> Self {
+        self.market_maker_address = Some(addresses);
+        self
+    }
+
+    pub fn sports_market_types(mut self, types: Vec<String>) -> Self {
+        self.sports_market_types = Some(types);
+        self
+    }
+
+    pub fn question_ids(mut self, question_ids: Vec<String>) -> Self {
+        self.question_ids = Some(question_ids);
+        self
+    }
+
+    // Builder methods for new numeric parameters
+    pub fn liquidity_num_max(mut self, max: Decimal) -> Self {
+        self.liquidity_num_max = Some(max);
+        self
+    }
+
+    pub fn volume_num_min(mut self, min: Decimal) -> Self {
+        self.volume_num_min = Some(min);
+        self
+    }
+
+    pub fn volume_num_max(mut self, max: Decimal) -> Self {
+        self.volume_num_max = Some(max);
+        self
+    }
+
+    pub fn rewards_min_size(mut self, size: Decimal) -> Self {
+        self.rewards_min_size = Some(size);
+        self
+    }
+
+    // Builder methods for new date parameters
+    pub fn start_date_max(mut self, date: DateTime<Utc>) -> Self {
+        self.start_date_max = Some(date);
+        self
+    }
+
+    pub fn end_date_min(mut self, date: DateTime<Utc>) -> Self {
+        self.end_date_min = Some(date);
+        self
+    }
+
+    // Builder methods for new boolean parameters
+    pub fn cyom(mut self, cyom: bool) -> Self {
+        self.cyom = Some(cyom);
+        self
+    }
+
+    pub fn include_tag(mut self, include: bool) -> Self {
+        self.include_tag = Some(include);
+        self
+    }
+
+    // Builder methods for new string parameters
+    pub fn uma_resolution_status(mut self, status: String) -> Self {
+        self.uma_resolution_status = Some(status);
+        self
+    }
+
+    pub fn game_id(mut self, game_id: String) -> Self {
+        self.game_id = Some(game_id);
+        self
+    }
+
     pub fn to_query_params(&self) -> Vec<(&str, String)> {
         let mut params = Vec::with_capacity(28);
 
