@@ -158,6 +158,33 @@ The following parameters are available for filtering markets when calling
 | `pfm` | `Option<bool>` | Profit/fee mode |
 | `search` | `Option<String>` | Free text search across markets |
 
+### Using GammaClient
+
+For market, event, and tag queries, use the dedicated GammaClient:
+
+```rust
+use polysqueeze::api::GammaClient;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let gamma_client = GammaClient::new();
+    
+    // Fetch markets
+    let markets = gamma_client.get_markets(None, None).await?;
+    println!("Markets: {:?}", markets);
+    
+    // Fetch events
+    let events = gamma_client.get_events(None).await?;
+    println!("Events: {:?}", events);
+    
+    // Fetch tags
+    let tags = gamma_client.get_tags().await?;
+    println!("Tags: {:?}", tags);
+    
+    Ok(())
+}
+```
+
 ## Testing
 
 Test order placement with this command (make sure env variables are set). This
