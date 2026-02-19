@@ -1561,6 +1561,20 @@ pub struct DataPositionValue {
     pub value: Decimal,
 }
 
+/// Gamma API tag
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct GammaTag {
+    pub id: String,
+    pub name: String,
+    pub slug: Option<String>,
+}
+
+/// Sports response from Gamma API
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SportsResponse {
+    pub sports: Vec<String>,
+}
+
 /// Gamma API event metadata
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GammaEvent {
