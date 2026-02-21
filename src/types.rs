@@ -566,6 +566,24 @@ impl PostOrder {
     }
 }
 
+/// Response for a single order in a batch request
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct BatchOrderResponse {
+    pub success: bool,
+    pub error_msg: Option<String>,
+    pub order_id: Option<String>,
+    pub making_amount: Option<String>,
+    pub taking_amount: Option<String>,
+    pub status: Option<String>,
+}
+
+impl BatchOrderResponse {
+    pub fn has_error(&self) -> bool {
+        !self.success || self.error_msg.is_some()
+    }
+}
+
 /// Market information
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Market {
@@ -1721,3 +1739,47 @@ pub type ClientResult<T> = anyhow::Result<T>;
 
 /// Result type used throughout the client
 pub type Result<T> = std::result::Result<T, crate::errors::PolyError>;
+
+#[cfg(test)]
+mod batch_order_response_tests {
+    use super::*;
+
+    #[test]
+    fn test_error_detection_success_false() {
+        let response = BatchOrderResponse {
+            success: false,
+            error_msg: Some("not enough balance / allowance".to_string()),
+            order_id: None,
+            making_amount: None,
+            taking_amount: None,
+            status: None,
+        };
+        assert!(response.has_error());
+    }
+
+    #[test]
+    fn test_error_detection_success_true_with_error_msg() {
+        let response = BatchOrderResponse {
+            success: true,
+            error_msg: Some("not enough balance / allowance".to_string()),
+            order_id: None,
+            making_amount: None,
+            taking_amount: None,
+            status: None,
+        };
+        assert!(response.has_error());
+    }
+
+    #[test]
+    fn test_error_detection_success_true_no_error_msg() {
+        let response = BatchOrderResponse {
+            success: true,
+            error_msg: None,
+            order_id: Some("order-123".to_string()),
+            making_amount: Some("100".to_string()),
+            taking_amount: Some("50".to_string()),
+            status: Some("filled".to_string()),
+        };
+        assert!(!response.has_error());
+    }
+}
