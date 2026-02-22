@@ -891,7 +891,7 @@ impl ClobClient {
         &self,
         orders: Vec<SignedOrderRequest>,
         order_type: OrderType,
-    ) -> Result<Vec<Value>> {
+    ) -> Result<Vec<BatchOrderResponse>> {
         let signer = self
             .signer
             .as_ref()
@@ -930,7 +930,22 @@ impl ClobClient {
             ));
         }
 
-        Ok(response.json::<Vec<Value>>().await?)
+        let batch_results: Vec<BatchOrderResponse> = response.json().await?;
+
+        for (idx, result) in batch_results.iter().enumerate() {
+            if result.has_error() {
+                let error_msg = result
+                    .error_msg
+                    .clone()
+                    .unwrap_or_else(|| "Unknown error".to_string());
+                return Err(PolyError::order(
+                    format!("Order {} failed: {}", idx, error_msg),
+                    crate::errors::OrderErrorKind::ExecutionFailed,
+                ));
+            }
+        }
+
+        Ok(batch_results)
     }
 
     /// Create and post an order in one call
@@ -1826,10 +1841,10 @@ impl ClobClient {
 
 // Re-export types from the canonical location in types.rs
 pub use crate::types::{
-    DataApiPositionsParams, DataApiSortBy, DataApiSortDirection, DataPosition, DataPositionValue,
-    ExtraOrderArgs, GammaEvent, GammaListParams, Market, MarketOrderArgs, MarketsResponse,
-    MidpointResponse, NegRiskResponse, OrderBookSummary, OrderSummary, PriceResponse, Rewards,
-    Sport, SpreadResponse, Tag, TickSizeResponse, Token,
+    BatchOrderResponse, DataApiPositionsParams, DataApiSortBy, DataApiSortDirection, DataPosition,
+    DataPositionValue, ExtraOrderArgs, GammaEvent, GammaListParams, Market, MarketOrderArgs,
+    MarketsResponse, MidpointResponse, NegRiskResponse, OrderBookSummary, OrderSummary,
+    PriceResponse, Rewards, Sport, SpreadResponse, Tag, TickSizeResponse, Token,
 };
 
 // Compatibility types that need to stay in client.rs
